@@ -99,7 +99,7 @@ public class Login_page extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener , OnMapReadyCallback,
         MapboxMap.OnMapClickListener  {
     String name, email,country,coordinates,address;
-    boolean backbutton_clicked;
+    boolean backbutton_clicked,colour_check ;
     TextView emailTextView;
     TextView nameTextView;
     ProgressDialog loadingBar;
@@ -122,15 +122,17 @@ public class Login_page extends AppCompatActivity
     StorageReference storageReference;
     //user profile image variable
     final static int Gallery_pick = 1;
+    final static int COLOR_PICK = 9;
     private String TAG = "Login_page";
     //mapbox
     MapView mapView;
     //colouring
     MapboxMap mapboxMap;
     Style style;
+    LatLng point;
     private FeatureCollection featureCollection;
-    private static final String geoJsonSourceId = "";
-    private static final String geoJsonLayerId = "";
+    private static final String geoJsonSourceId = "source";
+    private static final String geoJsonLayerId = "layer";
 
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
@@ -261,18 +263,18 @@ public class Login_page extends AppCompatActivity
 /*              Layer mapText = mapboxMap.getStyle().getLayer("country-label");
                 mapText.setProperties(textField("{name_en}"));*/
 
-
-
             }
         });
     }
 
     //selecting layer on map
-    @Override
-        public boolean onMapClick(@NonNull LatLng point) {
+
+
+    public boolean onMapClick(@NonNull LatLng point){
 
         //pop up initiates
-//        startActivity(new Intent(Login_page.this,Pop_up.class));
+        startActivityForResult(new Intent(Login_page.this,Pop_up.class),COLOR_PICK);
+
 
         //check on already coloured layer
         PointF pointf = mapboxMap.getProjection().toScreenLocation(point);
@@ -287,10 +289,11 @@ public class Login_page extends AppCompatActivity
                 Toast.makeText(Login_page.this, R.string.click_on_polygon_toast,
                         Toast.LENGTH_SHORT).show();
             }
-            return true;
+
         }
         //send its coordinate to colour layer function
         else {
+
 
             //gets country by coordinates (when user tab)
             coordinates = String.format(Locale.US, "User clicked at: %s", point.toString());
@@ -298,9 +301,9 @@ public class Login_page extends AppCompatActivity
             country = "{\"name\":\"" + address + "\"}";
 //            Toast.makeText(Login_page.this, address, Toast.LENGTH_SHORT).show();
             //--------------//
-            addGeoJsonSourceToMap(style);
+//            addGeoJsonSourceToMap(style);
         }
-            return false;
+         return false;
     }
 
     private void addGeoJsonSourceToMap(@NonNull Style loadedMapStyle) {
@@ -318,7 +321,8 @@ public class Login_page extends AppCompatActivity
             JSONArray features = root.getJSONArray("features");
 
             //loop compares country on tab with assest file
-            for (int i = 1; i < 183; i++) {
+            int i = 1;
+            for (i = 1; i < 183; i++) {
                 //access complete instance of coordinates (passable in geojasonsource method)
                 further_features = features.getJSONObject(i);
                 //access name of country with that coordinates
@@ -332,20 +336,17 @@ public class Login_page extends AppCompatActivity
                 }
 
             //passing coordinates from assest file
-            loadedMapStyle.addSource(new GeoJsonSource(geoJsonSourceId, String.valueOf(further_features)));
+
+            loadedMapStyle.addSource(new GeoJsonSource(geoJsonSourceId+i, String.valueOf(further_features)));
 
 
-
-//            while (colour == null) {
-                //method from pop up class (get colour)
-                colour = Pop_up.get_colour();
-//            }
+            //method from pop up class (get colour)
+            colour = Pop_up.get_colour();
 
             //colour layer function
-            style.addLayer(new FillLayer(geoJsonLayerId, geoJsonSourceId)
+            style.addLayer(new FillLayer(geoJsonLayerId+i, geoJsonSourceId+i)
                     .withProperties(fillOpacity(0.5f),
-                            fillColor(Color.parseColor("#1CFF1C")))
-            );
+                            fillColor(Color.parseColor(colour))));
 
         }
            catch (Throwable throwable) {
@@ -468,6 +469,11 @@ public class Login_page extends AppCompatActivity
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         //gallery_pick variable used here
+        if(requestCode == COLOR_PICK && resultCode == RESULT_OK){
+//            paint();
+            addGeoJsonSourceToMap(style);
+        }
+
         if (requestCode == Gallery_pick && resultCode == RESULT_OK && data != null) {
             Uri image_uri = data.getData();
             CropImage.activity(image_uri)
@@ -531,7 +537,7 @@ public class Login_page extends AppCompatActivity
             fragmentTransaction.commit();
         }
         else if(!backbutton_clicked) {
-            Toast.makeText(Login_page.this, "press again to close", Toast.LENGTH_SHORT).show();
+            Toast.makeText(Login_page.this, "press again to exit", Toast.LENGTH_SHORT).show();
             backbutton_clicked = true;
         }
         else {

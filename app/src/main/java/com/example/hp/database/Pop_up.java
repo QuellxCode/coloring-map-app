@@ -3,6 +3,7 @@ package com.example.hp.database;
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -15,6 +16,8 @@ public class Pop_up extends Activity {
 
     Button red,green,blue,yellow,pink;
     public static String colour;
+
+
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -33,11 +36,14 @@ public class Pop_up extends Activity {
 
         //colour buttons
 
+
+
         red = findViewById(R.id.red);
         red.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 put_colour("#FF0F0F");
+                setResult(RESULT_OK);
                 finish();
             }
         });
@@ -47,6 +53,7 @@ public class Pop_up extends Activity {
             @Override
             public void onClick(View v) {
                 put_colour("#1CFF1C");
+                setResult(RESULT_OK);
                 finish();
             }
         });
@@ -56,6 +63,7 @@ public class Pop_up extends Activity {
             @Override
             public void onClick(View v) {
                 put_colour("#2F0FFF");
+                setResult(RESULT_OK);
                 finish();
             }
         });
@@ -65,6 +73,7 @@ public class Pop_up extends Activity {
             @Override
             public void onClick(View v) {
                 put_colour("#FF1FE9");
+                setResult(RESULT_OK);
                 finish();
             }
         });
@@ -74,6 +83,7 @@ public class Pop_up extends Activity {
             @Override
             public void onClick(View v) {
                 put_colour("#FFFF19");
+                setResult(RESULT_OK);
                 finish();
             }
         });
