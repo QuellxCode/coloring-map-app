@@ -5,7 +5,6 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.PointF;
 import android.graphics.RectF;
@@ -17,12 +16,10 @@ import android.os.Build;
 import android.os.Bundle;
 //for @menu/login_page
 import android.os.CountDownTimer;
-import android.os.Handler;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -45,37 +42,26 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 import com.mapbox.geojson.Feature;
 import com.mapbox.geojson.FeatureCollection;
-import com.mapbox.geojson.Geometry;
-import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
-import com.mapbox.mapboxsdk.annotations.Marker;
-import com.mapbox.mapboxsdk.camera.CameraPosition;
-import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
-import com.mapbox.mapboxsdk.maps.MapboxMap.OnMapClickListener;
-import com.mapbox.mapboxsdk.maps.MapboxMapOptions;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.Style;
 import com.mapbox.mapboxsdk.style.layers.FillLayer;
 import com.mapbox.mapboxsdk.style.layers.Layer;
-import com.mapbox.mapboxsdk.style.layers.PropertyFactory;
-import com.mapbox.mapboxsdk.style.layers.SymbolLayer;
-import com.mapbox.mapboxsdk.style.light.Position;
+import com.mapbox.mapboxsdk.style.layers.PropertyValue;
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource;
 import com.squareup.picasso.Picasso;
 import com.theartofdev.edmodo.cropper.CropImage;
 import com.theartofdev.edmodo.cropper.CropImageView;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.security.cert.CertPathBuilder;
 import java.util.List;
 import java.util.Locale;
 import java.util.Scanner;
@@ -99,7 +85,7 @@ public class Login_page extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener , OnMapReadyCallback,
         MapboxMap.OnMapClickListener  {
     String name, email,country,coordinates,address;
-    boolean backbutton_clicked,colour_check ;
+    boolean backbutton_clicked ;
     TextView emailTextView;
     TextView nameTextView;
     ProgressDialog loadingBar;
@@ -107,6 +93,7 @@ public class Login_page extends AppCompatActivity
     Fragment currentFragment;
     String Current_user_id;
     public String colour;
+    int i = 1;
     //drawer variables
     DrawerLayout drawer;
     ActionBarDrawerToggle toggle;
@@ -129,13 +116,12 @@ public class Login_page extends AppCompatActivity
     //colouring
     MapboxMap mapboxMap;
     Style style;
-    LatLng point;
     private FeatureCollection featureCollection;
     private static final String geoJsonSourceId = "source";
     private static final String geoJsonLayerId = "layer";
 
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+//    @RequiresApi(api = Build.VERSION_CODES.P)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -235,6 +221,7 @@ public class Login_page extends AppCompatActivity
                 Intent galleryIntent = new Intent();
                 galleryIntent.setAction(Intent.ACTION_GET_CONTENT);
                 galleryIntent.setType("image/*");
+                //after intent it wait for user responce to proceed
                 startActivityForResult(galleryIntent, Gallery_pick);
             }
         });
@@ -260,98 +247,80 @@ public class Login_page extends AppCompatActivity
                 Login_page.this.style = style;
                 mapboxMap.addOnMapClickListener(Login_page.this);
                 //map language
-/*              Layer mapText = mapboxMap.getStyle().getLayer("country-label");
-                mapText.setProperties(textField("{name_en}"));*/
-
+              /*Layer mapText = mapboxMap.getStyle().getLayer("country-label");
+                mapText.setProperties(setTitleColor());*/
             }
         });
     }
 
     //selecting layer on map
-
-
     public boolean onMapClick(@NonNull LatLng point){
 
-        //pop up initiates
-        startActivityForResult(new Intent(Login_page.this,Pop_up.class),COLOR_PICK);
-
-
-        //check on already coloured layer
-        PointF pointf = mapboxMap.getProjection().toScreenLocation(point);
-        RectF rectF = new RectF(pointf.x - 10, pointf.y - 10, pointf.x + 10, pointf.y + 10);
-        List<Feature> features = mapboxMap.queryRenderedFeatures(rectF, geoJsonLayerId);
-
-        //layer is already coloured
-        if (features.size() > 0) {
-
-            for (Feature feature : features) {
-                Log.d("Feature found with %1$s", feature.toJson());
-                Toast.makeText(Login_page.this, R.string.click_on_polygon_toast,
-                        Toast.LENGTH_SHORT).show();
-            }
-
-        }
-        //send its coordinate to colour layer function
-        else {
-
-
             //gets country by coordinates (when user tab)
+            //send its name of country to addGeojasonSourceToMap function
             coordinates = String.format(Locale.US, "User clicked at: %s", point.toString());
             address = getCountryName(getApplicationContext(), point.getLatitude(), point.getLongitude());
             country = "{\"name\":\"" + address + "\"}";
 //            Toast.makeText(Login_page.this, address, Toast.LENGTH_SHORT).show();
-            //--------------//
-//            addGeoJsonSourceToMap(style);
-        }
+
+            try {
+
+                //accessing courntry file from raw folder in form of stream
+                InputStream inputStream = getResources().openRawResource(R.raw.countries_geo);
+                Scanner scanner = new Scanner(inputStream);
+                StringBuilder builder = new StringBuilder();
+                while (scanner.hasNextLine()) {
+                    builder.append(scanner.nextLine());
+                }
+                //maping with jason file
+                JSONObject root = new JSONObject(builder.toString());
+                JSONArray features = root.getJSONArray("features");
+
+                //loop compares country on tab with assest file
+                for (i = 0; i < 183; i++) {
+                    //access complete instance of coordinates (passable in geojasonsource method)
+                    further_features = features.getJSONObject(i);
+                    //access name of country with that coordinates
+                    properties = further_features.getJSONObject("properties");
+                    if (properties.toString().equals(country)) {
+//                        Toast.makeText(Login_page.this, properties.toString(), Toast.LENGTH_SHORT).show();
+                        Log.i("Properties: ", properties.toString());
+                        break;
+                    }
+                }
+
+                //layer is already coloured
+                if(style.getLayer(geoJsonLayerId + i) != null){
+                    Toast.makeText(Login_page.this, R.string.click_on_polygon_toast,
+                            Toast.LENGTH_SHORT).show();
+                }
+                else {
+                    //pop up initiates
+                    //after intent it wait for user responce to proceed , colour pick value equals to 9
+                    startActivityForResult(new Intent(Login_page.this,Pop_up.class),COLOR_PICK);
+                }
+            }
+
+            catch (Throwable throwable) {
+                Log.e("ClickOnLayerActivity", "Couldn't add GeoJsonSource to map", throwable);
+            }
+
          return false;
     }
 
     private void addGeoJsonSourceToMap(@NonNull Style loadedMapStyle) {
-        try {
-
-            //accessing courntry file from raw folder in form of stream
-            InputStream inputStream = getResources().openRawResource(R.raw.countries_geo);
-            Scanner scanner = new Scanner(inputStream);
-            StringBuilder builder = new StringBuilder();
-            while (scanner.hasNextLine()) {
-            builder.append(scanner.nextLine());
-            }
-             //maping with jason file
-            JSONObject root = new JSONObject(builder.toString());
-            JSONArray features = root.getJSONArray("features");
-
-            //loop compares country on tab with assest file
-            int i = 1;
-            for (i = 1; i < 183; i++) {
-                //access complete instance of coordinates (passable in geojasonsource method)
-                further_features = features.getJSONObject(i);
-                //access name of country with that coordinates
-                properties = further_features.getJSONObject("properties");
-                if (properties.toString().equals(country)) {
-
-                    Toast.makeText(Login_page.this, properties.toString(), Toast.LENGTH_SHORT).show();
-                    Log.i("Properties: ", properties.toString());
-                    break;
-                    }
-                }
 
             //passing coordinates from assest file
-
+            //with +i user can colour multiple layers
             loadedMapStyle.addSource(new GeoJsonSource(geoJsonSourceId+i, String.valueOf(further_features)));
-
 
             //method from pop up class (get colour)
             colour = Pop_up.get_colour();
 
             //colour layer function
             style.addLayer(new FillLayer(geoJsonLayerId+i, geoJsonSourceId+i)
-                    .withProperties(fillOpacity(0.5f),
+                    .withProperties(fillOpacity(0.8f),
                             fillColor(Color.parseColor(colour))));
-
-        }
-           catch (Throwable throwable) {
-            Log.e("ClickOnLayerActivity", "Couldn't add GeoJsonSource to map", throwable);
-        }
     }
         //getting name of country on map by coordinates on user tab
         public static String getCountryName(Context context, double latitude, double longitude) {
@@ -370,7 +339,6 @@ public class Login_page extends AppCompatActivity
         }
         return null;
     }
-
 
     //adding fragments to login_page (dynamically)
     public void addImport() {
@@ -468,12 +436,11 @@ public class Login_page extends AppCompatActivity
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        //gallery_pick variable used here
+        //colour_pick variable used here
         if(requestCode == COLOR_PICK && resultCode == RESULT_OK){
-//            paint();
             addGeoJsonSourceToMap(style);
         }
-
+          //gallery_pick variable used here
         if (requestCode == Gallery_pick && resultCode == RESULT_OK && data != null) {
             Uri image_uri = data.getData();
             CropImage.activity(image_uri)
