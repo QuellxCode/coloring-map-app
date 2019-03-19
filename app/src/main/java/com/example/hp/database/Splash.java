@@ -21,6 +21,7 @@ public class Splash extends AppCompatActivity {
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
+
                 //checking either id is saved in device storage of not
                 SharedPreferences sharedPreferences = getSharedPreferences("userid", Context.MODE_PRIVATE);
                 SharedPreferences sharedPreference = getSharedPreferences("google_Signin_id", Context.MODE_PRIVATE);

@@ -48,8 +48,13 @@ import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.Style;
+import com.mapbox.mapboxsdk.style.layers.BackgroundLayer;
+import com.mapbox.mapboxsdk.style.layers.CircleLayer;
+import com.mapbox.mapboxsdk.style.layers.FillExtrusionLayer;
 import com.mapbox.mapboxsdk.style.layers.FillLayer;
+import com.mapbox.mapboxsdk.style.layers.HillshadeLayer;
 import com.mapbox.mapboxsdk.style.layers.Layer;
+import com.mapbox.mapboxsdk.style.layers.LineLayer;
 import com.mapbox.mapboxsdk.style.layers.PropertyValue;
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource;
 import com.squareup.picasso.Picasso;
@@ -83,16 +88,13 @@ import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.textField;
 
 public class Login_page extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener , OnMapReadyCallback,
-        MapboxMap.OnMapClickListener  {
-    String name, email,country,coordinates,address;
-    boolean backbutton_clicked ;
-    TextView emailTextView;
-    TextView nameTextView;
+        MapboxMap.OnMapClickListener {
+    public String name, email, country, coordinates, address, Current_user_id, colour;
+    boolean backbutton_clicked, check;
+    TextView emailTextView, nameTextView;
     ProgressDialog loadingBar;
     ImageView displayImageView;
     Fragment currentFragment;
-    String Current_user_id;
-    public String colour;
     int i = 1;
     //drawer variables
     DrawerLayout drawer;
@@ -121,7 +123,7 @@ public class Login_page extends AppCompatActivity
     private static final String geoJsonLayerId = "layer";
 
 
-//    @RequiresApi(api = Build.VERSION_CODES.P)
+    //    @RequiresApi(api = Build.VERSION_CODES.P)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -164,7 +166,7 @@ public class Login_page extends AppCompatActivity
         //if user logged in thorugh google sign in (no id required from firebase and storage)
         //login mode will be not null and will hava text manual
         String loginMode = getIntent().getStringExtra("loginMode");
-        if (loginMode != null && loginMode.equals("Manual") ) {
+        if (loginMode != null && loginMode.equals("Manual")) {
             //if id arrives from phone storage else go for firebase
 
             if (sharedPreferences.getString("id", "").equals("")) {
@@ -208,7 +210,6 @@ public class Login_page extends AppCompatActivity
         Mapbox.setAccessToken("pk.eyJ1Ijoic2FsbGVoaGV5YXQiLCJhIjoiY2pydnpxOGowMDZ4ZDQ0bTF4bmh5aW5tbSJ9.kG2So6lAuLtDeNM-P8gT2Q");
 
 
-
         mapView = (MapView) findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
@@ -226,7 +227,8 @@ public class Login_page extends AppCompatActivity
             }
         });
 
-        new User_data().execute(Current_user_id); //id parsed to user data (async task) method
+        //id parsed to user data (async task) method
+        new User_data().execute(Current_user_id);
 
         //saving user id in device(for automatic login)
         SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -254,76 +256,79 @@ public class Login_page extends AppCompatActivity
     }
 
     //selecting layer on map
-    public boolean onMapClick(@NonNull LatLng point){
+    public boolean onMapClick(@NonNull LatLng point) {
 
-            //gets country by coordinates (when user tab)
-            //send its name of country to addGeojasonSourceToMap function
-            coordinates = String.format(Locale.US, "User clicked at: %s", point.toString());
-            address = getCountryName(getApplicationContext(), point.getLatitude(), point.getLongitude());
-            country = "{\"name\":\"" + address + "\"}";
+        //gets country by coordinates (when user tab)
+        //send its name of country to addGeojasonSourceToMap function
+        coordinates = String.format(Locale.US, "User clicked at: %s", point.toString());
+        address = getCountryName(getApplicationContext(), point.getLatitude(), point.getLongitude());
+        country = "{\"name\":\"" + address + "\"}";
 //            Toast.makeText(Login_page.this, address, Toast.LENGTH_SHORT).show();
 
-            try {
+        try {
 
-                //accessing courntry file from raw folder in form of stream
-                InputStream inputStream = getResources().openRawResource(R.raw.countries_geo);
-                Scanner scanner = new Scanner(inputStream);
-                StringBuilder builder = new StringBuilder();
-                while (scanner.hasNextLine()) {
-                    builder.append(scanner.nextLine());
-                }
-                //maping with jason file
-                JSONObject root = new JSONObject(builder.toString());
-                JSONArray features = root.getJSONArray("features");
+            //accessing courntry file from raw folder in form of stream
+            InputStream inputStream = getResources().openRawResource(R.raw.countries_geo);
+            Scanner scanner = new Scanner(inputStream);
+            StringBuilder builder = new StringBuilder();
+            while (scanner.hasNextLine()) {
+                builder.append(scanner.nextLine());
+            }
+            //maping with jason file
+            JSONObject root = new JSONObject(builder.toString());
+            JSONArray features = root.getJSONArray("features");
 
-                //loop compares country on tab with assest file
-                for (i = 0; i < 183; i++) {
-                    //access complete instance of coordinates (passable in geojasonsource method)
-                    further_features = features.getJSONObject(i);
-                    //access name of country with that coordinates
-                    properties = further_features.getJSONObject("properties");
-                    if (properties.toString().equals(country)) {
+            //loop compares country on tab with assest file
+            for (i = 0; i < 183; i++) {
+                //access complete instance of coordinates (passable in geojasonsource method)
+                further_features = features.getJSONObject(i);
+                //access name of country with that coordinates
+                properties = further_features.getJSONObject("properties");
+                if (properties.toString().equals(country)) {
 //                        Toast.makeText(Login_page.this, properties.toString(), Toast.LENGTH_SHORT).show();
-                        Log.i("Properties: ", properties.toString());
-                        break;
-                    }
-                }
-
-                //layer is already coloured
-                if(style.getLayer(geoJsonLayerId + i) != null){
-                    Toast.makeText(Login_page.this, R.string.click_on_polygon_toast,
-                            Toast.LENGTH_SHORT).show();
-                }
-                else {
-                    //pop up initiates
-                    //after intent it wait for user responce to proceed , colour pick value equals to 9
-                    startActivityForResult(new Intent(Login_page.this,Pop_up.class),COLOR_PICK);
+                    Log.i("Properties: ", properties.toString());
+                    break;
                 }
             }
 
-            catch (Throwable throwable) {
-                Log.e("ClickOnLayerActivity", "Couldn't add GeoJsonSource to map", throwable);
+            //layer is already coloured
+            if (style.getLayer(geoJsonLayerId + i) == null) {
+                //pop up initiates
+                //after intent it wait for user responce to proceed , colour pick value equals to 9
+                startActivityForResult(new Intent(Login_page.this, Pop_up.class), COLOR_PICK);
+            } else {
+                //remove already coloured layer
+                style.removeLayer(new FillLayer(geoJsonLayerId + i, geoJsonSourceId + i));
+                check = true;
             }
+        } catch (Throwable throwable) {
+            Log.e("ClickOnLayerActivity", "Couldn't add GeoJsonSource to map", throwable);
+        }
 
-         return false;
+        return false;
     }
 
     private void addGeoJsonSourceToMap(@NonNull Style loadedMapStyle) {
 
-            //passing coordinates from assest file
-            //with +i user can colour multiple layers
-            loadedMapStyle.addSource(new GeoJsonSource(geoJsonSourceId+i, String.valueOf(further_features)));
+        if (check) {
+            loadedMapStyle.removeSource(geoJsonSourceId + i);
+            check = false;
+        }
+        //passing coordinates from assest file
+        //with +i user can colour multiple layers
+        loadedMapStyle.addSource(new GeoJsonSource(geoJsonSourceId + i, String.valueOf(further_features)));
 
-            //method from pop up class (get colour)
-            colour = Pop_up.get_colour();
+        //method from pop up class (get colour)
+        colour = Pop_up.get_colour();
 
-            //colour layer function
-            style.addLayer(new FillLayer(geoJsonLayerId+i, geoJsonSourceId+i)
-                    .withProperties(fillOpacity(0.8f),
-                            fillColor(Color.parseColor(colour))));
+        //colour layer function
+        style.addLayer(new FillLayer(geoJsonLayerId + i, geoJsonSourceId + i)
+                .withProperties(fillOpacity(0.8f),
+                        fillColor(Color.parseColor(colour))));
     }
-        //getting name of country on map by coordinates on user tab
-        public static String getCountryName(Context context, double latitude, double longitude) {
+
+    //getting name of country on map by coordinates on user tab
+    public static String getCountryName(Context context, double latitude, double longitude) {
         Geocoder geocoder = new Geocoder(context, Locale.getDefault());
         List<Address> addresses = null;
         try {
@@ -437,10 +442,10 @@ public class Login_page extends AppCompatActivity
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         //colour_pick variable used here
-        if(requestCode == COLOR_PICK && resultCode == RESULT_OK){
+        if (requestCode == COLOR_PICK && resultCode == RESULT_OK) {
             addGeoJsonSourceToMap(style);
         }
-          //gallery_pick variable used here
+        //gallery_pick variable used here
         if (requestCode == Gallery_pick && resultCode == RESULT_OK && data != null) {
             Uri image_uri = data.getData();
             CropImage.activity(image_uri)
@@ -496,18 +501,15 @@ public class Login_page extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
-        }
-        else if (currentFragment.isAdded()){
+        } else if (currentFragment.isAdded()) {
             FragmentManager fragmentManager = getSupportFragmentManager();
             FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
             fragmentTransaction.remove(currentFragment);
             fragmentTransaction.commit();
-        }
-        else if(!backbutton_clicked) {
+        } else if (!backbutton_clicked) {
             Toast.makeText(Login_page.this, "press again to exit", Toast.LENGTH_SHORT).show();
             backbutton_clicked = true;
-        }
-        else {
+        } else {
             super.onBackPressed();
         }
 
@@ -519,7 +521,7 @@ public class Login_page extends AppCompatActivity
 
             @Override
             public void onFinish() {
-             backbutton_clicked = false;
+                backbutton_clicked = false;
             }
         }.start();
 
@@ -615,8 +617,6 @@ public class Login_page extends AppCompatActivity
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
-
-
 
 
     //async task (to run accessing data from database in background)
