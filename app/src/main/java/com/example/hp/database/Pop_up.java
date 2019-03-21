@@ -16,7 +16,7 @@ import androidx.annotation.Nullable;
 public class Pop_up extends Activity {
 
 
-    Button red,green,blue,yellow,pink;
+    Button red,green,blue,yellow,pink,orange,purple,light_blue,brown;
     public static String colour;
 
 
@@ -38,13 +38,11 @@ public class Pop_up extends Activity {
 
         //colour buttons
 
-
-
         red = findViewById(R.id.rede);
         red.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                put_colour("#FF0F0F");
+                put_colour("#B50606");
                 setResult(RESULT_OK);
                 finish();
             }
@@ -54,7 +52,7 @@ public class Pop_up extends Activity {
         green.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                put_colour("#1CFF1C");
+                put_colour("#075E04");
                 setResult(RESULT_OK);
                 finish();
             }
@@ -85,6 +83,46 @@ public class Pop_up extends Activity {
             @Override
             public void onClick(View v) {
                 put_colour("#FFFF19");
+                setResult(RESULT_OK);
+                finish();
+            }
+        });
+
+        orange = findViewById(R.id.orange);
+        orange.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                put_colour("#FFBF0F");
+                setResult(RESULT_OK);
+                finish();
+            }
+        });
+
+        purple = findViewById(R.id.purple);
+        purple.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                put_colour("#641980");
+                setResult(RESULT_OK);
+                finish();
+            }
+        });
+
+        light_blue = findViewById(R.id.light_blue);
+        light_blue.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                put_colour("#1FFFFF");
+                setResult(RESULT_OK);
+                finish();
+            }
+        });
+
+        brown = findViewById(R.id.brown);
+        brown.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                put_colour("#80411C");
                 setResult(RESULT_OK);
                 finish();
             }

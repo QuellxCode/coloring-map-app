@@ -22,8 +22,12 @@ public class Splash extends AppCompatActivity {
             @Override
             public void run() {
 
+                //till removed authentication part
+                Intent Intent = new Intent(Splash.this, Login_page.class);
+                startActivity(Intent);
+
                 //checking either id is saved in device storage of not
-                SharedPreferences sharedPreferences = getSharedPreferences("userid", Context.MODE_PRIVATE);
+                /*SharedPreferences sharedPreferences = getSharedPreferences("userid", Context.MODE_PRIVATE);
                 SharedPreferences sharedPreference = getSharedPreferences("google_Signin_id", Context.MODE_PRIVATE);
                 //if one of folder contain the id
                 if(!sharedPreferences.getString("id", "").equals("")) {
@@ -46,7 +50,7 @@ public class Splash extends AppCompatActivity {
                     startActivity(homeIntent);
                     //activity terminates
                     finish();
-                }
+                }*/
                 }
             //max time variable
         },max_time);
