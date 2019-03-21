@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.PointF;
 import android.graphics.RectF;
+import android.graphics.drawable.ColorDrawable;
 import android.location.Address;
 import android.location.Geocoder;
 import android.net.Uri;
@@ -90,7 +91,7 @@ public class Login_page extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener , OnMapReadyCallback,
         MapboxMap.OnMapClickListener {
     public String name, email, country, coordinates, address, Current_user_id, colour;
-    boolean backbutton_clicked, remove_source,network;
+    boolean backbutton_clicked,remove_source;
     TextView emailTextView, nameTextView;
     ProgressDialog loadingBar;
     ImageView displayImageView;
@@ -243,17 +244,19 @@ public class Login_page extends AppCompatActivity
     public void onMapReady(@NonNull final MapboxMap mapboxMap) {
 
         Login_page.this.mapboxMap = mapboxMap;
-        mapboxMap.setStyle(Style.TRAFFIC_NIGHT, new Style.OnStyleLoaded() {
+        mapboxMap.setStyle(Style.MAPBOX_STREETS, new Style.OnStyleLoaded() {
             @Override
             public void onStyleLoaded(@NonNull Style style) {
                 Login_page.this.style = style;
                 mapboxMap.addOnMapClickListener(Login_page.this);
                 //map language
-              /*Layer mapText = mapboxMap.getStyle().getLayer("country-label");
-                mapText.setProperties(setTitleColor());*/
+/*              Layer mapText = mapboxMap.getStyle().getLayer("country-label");
+                mapText.setProperties();*/
             }
         });
     }
+
+
 
     //selecting layer on map
     public boolean onMapClick(@NonNull LatLng point) {
@@ -304,6 +307,7 @@ public class Login_page extends AppCompatActivity
                    //remove already coloured layer
                    style.removeLayer(new FillLayer(geoJsonLayerId + i, geoJsonSourceId + i));
                    remove_source = true;
+                   addGeoJsonSourceToMap(style);
                }
            } catch (Throwable throwable) {
                Log.e("ClickOnLayerActivity", "Couldn't add GeoJsonSource to map", throwable);
@@ -314,22 +318,25 @@ public class Login_page extends AppCompatActivity
 
     private void addGeoJsonSourceToMap(@NonNull Style loadedMapStyle) {
 
-        if (remove_source) {
+        if (remove_source){
             loadedMapStyle.removeSource(geoJsonSourceId + i);
-            remove_source = false;
+             remove_source = false;
         }
-        //passing coordinates from assest file
-        //with +i user can colour multiple layers
-        loadedMapStyle.addSource(new GeoJsonSource(geoJsonSourceId + i, String.valueOf(further_features)));
 
-        //method from pop up class (get colour)
-        colour = Pop_up.get_colour();
+        else {
+            //passing coordinates from assest file
+            //with +i user can colour multiple layers
+            loadedMapStyle.addSource(new GeoJsonSource(geoJsonSourceId + i, String.valueOf(further_features)));
 
-        //colour layer function
-        style.addLayer(new FillLayer(geoJsonLayerId + i, geoJsonSourceId + i)
-                .withProperties(fillOpacity(0.8f),
-                        fillColor(Color.parseColor(colour))));
 
+            //method from pop up class (get colour)
+            colour = Pop_up.get_colour();
+
+            //colour layer function
+            style.addLayer(new FillLayer(geoJsonLayerId + i, geoJsonSourceId + i)
+                    .withProperties(fillOpacity(0.8f),
+                            fillColor(Color.parseColor(colour))));
+        }
     }
 
     //getting name of country on map by coordinates on user tab
